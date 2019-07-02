@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
+#include "utmplib.c"
 
 #define SHOWHOST
 
