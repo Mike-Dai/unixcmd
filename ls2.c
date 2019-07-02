@@ -47,7 +47,7 @@ void do_ls(char dirname[]) {
 
 void dostat(char *filename) {
 	struct stat info;
-	if (stat(filename, &info) == -1) {
+	if (stat(filename, &info) == -1) {   /* can not stat */
 		perror(filename);
 	}
 	else {
@@ -55,6 +55,9 @@ void dostat(char *filename) {
 	}
 }
 
+/*
+ * display the info about filename. The info is stored in struct at * info_p
+ */
 void show_file_info(char *filename, struct stat *info_p) {
 	char *uid_to_name(), *ctime(), *gid_to_name(), *filemode();
 	void mode_to_letters();
@@ -70,25 +73,32 @@ void show_file_info(char *filename, struct stat *info_p) {
 	printf("%.12s", 4 + ctime(&info_p->st_mtime));
 	printf("%s\n", filename);
 }
+
 /*
  * utility functions
-*/
+ */
+
+/*
+ * This function takes a mode value and a char array
+ * and puts into the char array the file type and the
+ * nine letters that correspond to the bits in mode.
+ */
 void mode_to_letters(int mode, char str[]) {
-	strcpy(str, "----------");
+	strcpy(str, "----------");         /* default = no perms */
 
-	if (S_ISDIR(mode)) str[0] = 'd';
-	if (S_ISCHR(mode)) str[0] = 'c';
-	if (S_ISBLK(mode)) str[0] = 'b';
+	if (S_ISDIR(mode)) str[0] = 'd';   /* directory? */
+	if (S_ISCHR(mode)) str[0] = 'c';   /* char devices */
+	if (S_ISBLK(mode)) str[0] = 'b';   /* block device */
 
-	if (mode & S_IRUSR) str[1] = 'r';
+	if (mode & S_IRUSR) str[1] = 'r';  /* 3 bits for user */
 	if (mode & S_IWUSR) str[2] = 'w';
 	if (mode & S_IXUSR) str[3] = 'x';
 
-	if (mode & S_IRGRP) str[4] = 'r';
+	if (mode & S_IRGRP) str[4] = 'r';  /* 3 bits for group */
 	if (mode & S_IWGRP) str[5] = 'w';
 	if (mode & S_IXGRP) str[6] = 'x';
 
-	if (mode & S_IROTH) str[7] = 'r';
+	if (mode & S_IROTH) str[7] = 'r';  /* 3 bits for other */
 	if (mode & S_IWOTH) str[8] = 'w';
 	if (mode & S_IXOTH) str[9] = 'x';
 }
