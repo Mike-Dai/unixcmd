@@ -1,3 +1,13 @@
+/* spwd.c: a simplified version of pwd
+ * 
+ * starts in current directory and recursively
+ * climbs up to root of filesystem, print top part
+ * then print current part
+ *
+ * use readdir() to get info about each thing
+ *
+ */
+
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -11,8 +21,8 @@ void printpathto(ino_t);
 void inum_to_name(ino_t, char*, int);
 
 int main() {
-	printpathto(get_inode("."));
-	putchar('\n');
+	printpathto(get_inode("."));            /* print path to here */
+	putchar('\n');							/* then add new line */						
 	return 0;
 }
 
@@ -21,17 +31,17 @@ void printpathto(ino_t this_node) {
 	char its_name[BUFSIZ];
 
 	if (this_node != get_inode("..")) {
-		chdir("..");
-		inum_to_name(this_node, its_name, BUFSIZ);
-		my_inode = get_inode(".");
-		printpathto(my_inode);
-		printf("/%s", its_name);
+		chdir("..");                                /* up one dir */
+		inum_to_name(this_node, its_name, BUFSIZ);  /* get its name */
+		my_inode = get_inode(".");                  /* print head */
+		printpathto(my_inode);					    /* recursively */
+		printf("/%s", its_name);                    /* now print name of this */
 	}
 }
 
 void inum_to_name(ino_t inode_to_find, char *namebuf, int buflen) {
-	DIR *dir_ptr;
-	struct dirent *direntp;
+	DIR *dir_ptr;                        /* the directory */ 
+	struct dirent *direntp;              /* each entry */
 	dir_ptr = opendir(".");
 	if (dir_ptr == NULL) {
 		perror(".");
@@ -40,7 +50,7 @@ void inum_to_name(ino_t inode_to_find, char *namebuf, int buflen) {
 	while ((direntp = readdir(dir_ptr)) != NULL) {
 		if (direntp->d_ino == inode_to_find) {
 			strncpy(namebuf, direntp->d_name, buflen);
-			namebuf[buflen - 1] = '\0';
+			namebuf[buflen - 1] = '\0';  /* just in case */
 			closedir(dir_ptr);
 			return;
 		}
