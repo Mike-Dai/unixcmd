@@ -1,7 +1,8 @@
 /* 
  * play_again1.c
  * purpose: ask if user wants another transaction
- * method: set tty into char-by-char mode, read char, return result
+ * method: set tty into char-by-char and no-echo mode
+ * read char, return result
  * return: 0 => yes, 1=>no
  */
 #include <stdio.h>
@@ -10,13 +11,13 @@
 #define QUESTION "Do you want another transaction"
 
 int get_response(char* question);
-void set_crmode();
+void set_cr_noecho_mode();
 int tty_mode(int how);
 
 int main() {
 	int response;
 	tty_mode(0);                         /* save tty mode */
-	set_crmode();                        /* set char-by-char mode */
+	set_cr_noecho_mode();                /* set char-by-char mode */
 	response = get_response(QUESTION);   /* get some answer */
 	tty_mode(1);                         /* restore tty mode */
 	return response;
@@ -32,14 +33,11 @@ int get_response(char* question) {
 			case 'n':
 			case 'N':
 			case EOF: return 1;
-			default:
-				printf("\ncannot understand %c", input);
-				printf("Please type y or n\n");
 		}
 	}
 }
 
-void set_crmode() {
+void set_cr_noecho_mode() {
 	/* 
 	 * purpose: put file descriptor 0 (i.e. stdin) into char-by-char mode
 	 * method: use bits in termios
@@ -47,6 +45,7 @@ void set_crmode() {
 	struct termios ttystate;
 	tcgetattr(0, &ttystate);          /* read current setting */
 	ttystate.c_lflag &= ~ICANON;      /* no buffering */
+	ttystate.c_lflag &= ~ECHO;        /* no echo either */
 	ttystate.c_cc[VMIN] = 1;          /* get 1 char at a time */
 	tcsetattr(0, TCSANOW, &ttystate); /* install settings */
 }
