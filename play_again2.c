@@ -4,6 +4,7 @@
  * method: set tty into char-by-char and no-echo mode
  * set tty into no-delay mode
  * read char, return result
+ * reset terminal mode on SIGINT, ignore SIGQUIT
  * return: 0 => yes, 1 => no, 2 => timeout
  */
 #include <stdio.h>
@@ -12,6 +13,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <signal.h>
+#include <stdlib.h>
 
 #define QUESTION "Do you want another transaction"
 #define TRIES 3              /* max tries */
@@ -23,12 +26,15 @@ char get_ok_char();
 void set_cr_noecho_mode();
 void set_nodelay_mode();
 void tty_mode(int how);
+void ctrl_c_handler(int signum);
 
 int main() {
 	int response;
 	tty_mode(0);                                /* save tty mode */
 	set_cr_noecho_mode();                       /* set char-by-char mode */
 	set_nodelay_mode();                         /* no input => EOF */
+	signal(SIGINT, ctrl_c_handler);             /* handle INT */
+	signal(SIGQUIT, SIG_IGN);                   /* ignore QUIT signals */
 	response = get_response(QUESTION, TRIES);   /* get some answer */
 	tty_mode(1);                                /* restore tty mode */
 	return response;
@@ -43,11 +49,14 @@ int get_response(char* question, int maxtries) {
 		input = tolower(get_ok_char());
 		if (input == 'y')    return 0;
 		if (input == 'n')    return 1;
-		if (maxtries-- == 0) return 2;
+		if (maxtries-- == 0) return 2;          /* time out? */
 		BEEP;
 	}
 }
 
+/*
+ * skip over non-legal chars and return y, Y, n, N or EOF
+ */
 char get_ok_char() {
 	int c;
 	while ((c = getchar()) != EOF && strchr("yYnN", c) == NULL);
@@ -78,12 +87,19 @@ void set_nodelay_mode() {
 void tty_mode(int how) {
 	static struct termios original_mode;
 	static int original_flags;
+	static int stored = 0;
 	if (how == 0) {
 		tcgetattr(0, &original_mode);
 		original_flags = fcntl(0, F_GETFL);
+		stored = 1;
 	}
-	else {
+	else if (stored) {
 		tcsetattr(0, TCSANOW, &original_mode);
 		fcntl(0, F_SETFL, original_flags);
 	}
+}
+
+void ctrl_c_handler(int signum) {
+	tty_mode(1);
+	exit(1);
 }
