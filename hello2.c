@@ -17,8 +17,8 @@ int main() {
 		}
 		refresh();
 		sleep(1);
-		move(i, i + 1);
-		addstr("                 ");
+		move(i, i + 1);               /* move back */
+		addstr("                 ");  /* erase line */
 	}
 	endwin();
 	return 0;
